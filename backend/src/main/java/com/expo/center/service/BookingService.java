@@ -70,7 +70,9 @@ public class BookingService {
         if (!input.endDate.isAfter(input.startDate)) {
             throw new BizException("结束日期要晚于开展日期");
         }
-        Booth booth = booths.findById(input.boothId)
+        // 锁展位行 + 当前读：改号事务若正在走，这里等它走完再读到新号，
+        // 确认函上印的展位号不会是它刚退掉的旧号；同展位的排期也借此串行，重叠校验不看旧快照
+        Booth booth = booths.findForUpdate(input.boothId)
                 .orElseThrow(() -> new BizException("展位不存在"));
         if ("维修".equals(booth.status)) {
             throw new BizException("展位 " + booth.code + " 正在维修，排不了");
@@ -84,6 +86,7 @@ public class BookingService {
         Booking saved = new Booking();
         saved.code = input.code.trim();
         saved.boothId = booth.id;
+        saved.boothCode = booth.code;
         saved.expoName = input.expoName.trim();
         saved.tenant = input.tenant.trim();
         saved.startDate = input.startDate;

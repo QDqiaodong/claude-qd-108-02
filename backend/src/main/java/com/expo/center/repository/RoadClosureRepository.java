@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -36,4 +37,12 @@ public interface RoadClosureRepository extends JpaRepository<RoadClosure, Long> 
                                    @Param("closeDate") java.time.LocalDate closeDate,
                                    @Param("channel") String channel,
                                    @Param("statuses") List<String> statuses);
+
+    /** 改号连带走件：这个展位名下还没闭环的封道条（待审 / 已批准）一起换成新号；
+     *  已驳回、作废的旧条不动。 */
+    @Modifying
+    @Query("update RoadClosure c set c.boothCode = :code "
+            + "where c.status in ('待审', '已批准') "
+            + "and c.bookingId in (select b.id from Booking b where b.boothId = :boothId)")
+    int cascadeBoothCode(@Param("boothId") Long boothId, @Param("code") String code);
 }

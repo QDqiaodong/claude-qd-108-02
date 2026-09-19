@@ -28,4 +28,8 @@ public class Booth {
     /** 空闲 / 已租 / 维修 */
     @Column(nullable = false, length = 16)
     public String status;
+
+    /** 原号留痕（不落 booth 表，列表时从 booth_code_log 拼出，给门卫对旧函用） */
+    @Transient
+    public java.util.List<String> formerCodes;
 }

@@ -68,6 +68,10 @@
       <el-table-column label="展馆" width="100">
         <template #default="{ row }">{{ hallName(row.hallId) }}</template>
       </el-table-column>
+      <el-table-column label="展位号" width="96">
+        <!-- 条上印的号：改号后待审 / 已批准的条子已一起换新，门卫按这个号放行 -->
+        <template #default="{ row }"><span class="mono">{{ row.boothCode }}</span></template>
+      </el-table-column>
       <el-table-column label="封道日期" width="112" prop="closeDate" />
       <el-table-column label="卸货通道·段" min-width="180">
         <template #default="{ row }">

@@ -91,12 +91,16 @@
         <div v-for="b in rows" :key="b.id" class="bcard">
           <div class="bcard-top">
             <span class="bcode">{{ b.code }}</span>
+            <a class="renumber" title="改号连带走件" @click="openRenumber(b)">改号</a>
             <span class="bst" :class="statusClass(b.status)">{{ b.status }}</span>
           </div>
           <div class="bmeta">
             <span>{{ hallName(b.hallId) }}</span>
             <span class="dot">·</span>
             <span>{{ b.kind }}</span>
+          </div>
+          <div v-if="b.formerCodes && b.formerCodes.length" class="bformer">
+            原号 {{ b.formerCodes.join('、') }}（旧函仍有效）
           </div>
           <div class="barea">{{ b.area }} <small>㎡</small></div>
 
@@ -121,6 +125,25 @@
         <div v-if="!rows.length" class="no-result">没有符合条件的展位，把条件放宽点试试</div>
       </div>
     </section>
+
+    <el-dialog v-model="renumberDlg" title="展位改号" width="470px">
+      <el-form label-width="88px">
+        <el-form-item label="当前编号">
+          <el-input :model-value="renumberTarget ? renumberTarget.code : ''" disabled />
+        </el-form-item>
+        <el-form-item label="新编号">
+          <el-input v-model="renumberCode" placeholder="如 A-105" @keyup.enter="doRenumber" />
+        </el-form-item>
+      </el-form>
+      <div class="renumber-hint">
+        改号连带走件：未结束的排期确认函、待审 / 已批准的封道条一起换新号，门卫按新号放行；
+        旧号留痕停用，不能再摆新展位占同一块面积；已结束的旧函仍印旧号、继续有效。
+      </div>
+      <template #footer>
+        <el-button @click="renumberDlg = false">取消</el-button>
+        <el-button type="primary" :loading="renumbering" @click="doRenumber">改号</el-button>
+      </template>
+    </el-dialog>
 
     <el-dialog v-model="dlg" title="摆一个新展位" width="470px">
       <el-form label-width="88px">
@@ -168,13 +191,23 @@ const collapsed = ref(false)
 const dlg = ref(false)
 const newBooth = ref({})
 const forms = reactive({})
+const renumberDlg = ref(false)
+const renumberTarget = ref(null)
+const renumberCode = ref('')
+const renumbering = ref(false)
 
 const filters = ref({ keyword: '', hallId: null, status: '', kind: '', minArea: 0 })
 
 const rows = computed(() =>
   all.value.filter((b) => {
     const f = filters.value
-    if (f.keyword && !b.code.includes(f.keyword)) return false
+    if (f.keyword) {
+      // 旧号也能搜到：门卫拿旧函来对，名片上找得到现在的新号
+      const hit =
+        b.code.includes(f.keyword) ||
+        (b.formerCodes && b.formerCodes.some((c) => c.includes(f.keyword)))
+      if (!hit) return false
+    }
     if (f.hallId !== null && b.hallId !== f.hallId) return false
     if (f.status && b.status !== f.status) return false
     if (f.kind && b.kind !== f.kind) return false
@@ -235,6 +268,30 @@ async function save(b) {
   } catch (e) {
     ElMessage.error(e.message)
     await load()
+  }
+}
+
+function openRenumber(b) {
+  renumberTarget.value = b
+  renumberCode.value = ''
+  renumberDlg.value = true
+}
+
+async function doRenumber() {
+  const code = renumberCode.value.trim()
+  if (!code) return ElMessage.error('要填新编号')
+  if (code === renumberTarget.value.code) return ElMessage.error('新编号跟现在的一样')
+  renumbering.value = true
+  try {
+    await boothApi.update(renumberTarget.value.id, { code })
+    ElMessage.success(`${renumberTarget.value.code} 已改号为 ${code}，未结束排期和未结封道条已一起换新号`)
+    renumberDlg.value = false
+    await load()
+  } catch (e) {
+    // 号被别人先用（含并发抢号）时，后端带回「已经被人用过」
+    ElMessage.error(e.message)
+  } finally {
+    renumbering.value = false
   }
 }
 
@@ -378,6 +435,27 @@ onMounted(load)
   font-family: Menlo, monospace;
   font-size: 13px;
   font-weight: 600;
+}
+.renumber {
+  font-size: 12px;
+  color: var(--el-color-primary);
+  cursor: pointer;
+  margin-left: auto;
+  margin-right: 8px;
+}
+.bformer {
+  font-size: 11px;
+  color: #b0b6c6;
+  margin: 2px 0;
+}
+.renumber-hint {
+  font-size: 12px;
+  color: #8b93a7;
+  line-height: 1.6;
+  background: #f7f8fc;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-top: 4px;
 }
 .bst {
   font-size: 11px;

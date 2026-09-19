@@ -49,8 +49,18 @@ docker compose down -v    # 连数据卷一起删，下次启动重新灌种子�
 写入时校验：**摆到某间展馆后不能超出这间馆的可用面积**；
 **只能摆进「启用」的展馆**；**还有没结束排期的展位不能换馆、不能转维修**。
 
+**改号连带走件**（名片上点「改号」）：展位编号是卸货口和门禁对票的依据，改号不是只换名牌——
+
+- 改号当下，这个展位名下**未结束的排期确认函、待审 / 已批准的封道条一起换成新号**，
+  门卫按新号放行；已结束的排期、已驳回 / 作废的封道条是旧函，仍印旧号、继续有效
+  （财务不用回头改合同）。
+- **旧号写进 `booth_code_log` 留痕并永久停用**：从可选票面消失，不能再摆新展位，
+  同一块面积不会被新旧两套号各算一次；名片上摆出「原号」，门卫拿旧函能对上新号。
+- **两人同时改同一个号，只留一条有效编号**：改号按「先锁展馆行、再锁展位行」串行，
+  编号唯一索引兜底，晚到的一方看见「这个号已经被人用过」。
+
 - 页面：展位管理（`/booths`）
-- 接口：`GET /api/booths`、`POST /api/booths`、`PUT /api/booths/{id}`
+- 接口：`GET /api/booths`、`POST /api/booths`、`PUT /api/booths/{id}`（改号带 `code`）
 
 ### 3. 展会排期（`booking`）
 
@@ -145,7 +155,8 @@ backend/src/main/java/com/expo/center/
 ├── config/       CORS 配置
 ├── controller/   REST 入口
 ├── dto/          BizException + 统一错误响应
-├── entity/       10 张业务表（含 road_closure 封道单、calib_batch 校准批次、calib_occ 占用行及单号序列）
+├── entity/       11 张业务表（含 road_closure 封道单、calib_batch 校准批次、calib_occ 占用行、
+│                 booth_code_log 改号留痕及单号序列）
 ├── repository/   Spring Data JPA
 └── service/      业务规则（面积校验、区间重叠、状态联动、库存扣减、校准占用）
 backend/src/main/resources/schema.sql   建表 + 种子数据（挂进 MySQL initdb）

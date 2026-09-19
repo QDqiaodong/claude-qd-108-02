@@ -160,6 +160,9 @@ public class RoadClosureService {
         RoadClosure saved = new RoadClosure();
         saved.code = nextCode();
         saved.bookingId = booking.id;
+        // 条上印的展位号取锁后当前读的排期快照：改号若刚走完，这里印的就是新号，
+        // 不会印出它刚退掉的旧号；已批准的条子随后也会被改号级联一起换新
+        saved.boothCode = booking.boothCode;
         saved.hallId = hall.id;
         saved.expoName = booking.expoName;
         saved.tenant = booking.tenant;

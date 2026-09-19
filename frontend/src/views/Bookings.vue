@@ -30,7 +30,8 @@
       <el-table-column label="展位信息" align="center">
         <el-table-column label="展位号" width="96">
           <template #default="{ row }">
-            <span class="mono">{{ boothCode(row.boothId) }}</span>
+            <!-- 确认函上印的号：未结束的随改号换新，已结束的旧函仍印旧号 -->
+            <span class="mono">{{ row.boothCode || boothCode(row.boothId) }}</span>
           </template>
         </el-table-column>
         <el-table-column label="展馆" width="110">
