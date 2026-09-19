@@ -18,6 +18,10 @@ public class Booking {
     @Column(name = "booth_id", nullable = false)
     public Long boothId;
 
+    /** 随单快照：排期确认函上印的展位号；展位改号时未结束的函一起换新号，已结束的留旧号 */
+    @Column(name = "booth_code", nullable = false, length = 32)
+    public String boothCode;
+
     /** 展会名称 */
     @Column(name = "expo_name", nullable = false, length = 128)
     public String expoName;

@@ -50,7 +50,8 @@ public class RoadClosureService {
                 .filter(c -> status == null || status.isEmpty() || status.equals(c.status))
                 .filter(c -> keyword == null || keyword.isEmpty()
                         || c.expoName.contains(keyword) || c.tenant.contains(keyword)
-                        || c.channel.contains(keyword) || c.code.contains(keyword))
+                        || c.channel.contains(keyword) || c.code.contains(keyword)
+                        || (c.boothCode != null && c.boothCode.contains(keyword)))
                 .toList();
     }
 
@@ -161,6 +162,8 @@ public class RoadClosureService {
         saved.code = nextCode();
         saved.bookingId = booking.id;
         saved.hallId = hall.id;
+        // 封道条上印的展位号随单快照：门卫按这个对票；改号时未闭环的条由 BoothService 一起换
+        saved.boothCode = booth.code;
         saved.expoName = booking.expoName;
         saved.tenant = booking.tenant;
         saved.closeDate = input.closeDate;

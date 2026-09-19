@@ -30,7 +30,7 @@
       <el-table-column label="展位信息" align="center">
         <el-table-column label="展位号" width="96">
           <template #default="{ row }">
-            <span class="mono">{{ boothCode(row.boothId) }}</span>
+            <span class="mono">{{ row.boothCode }}</span>
           </template>
         </el-table-column>
         <el-table-column label="展馆" width="110">
@@ -140,11 +140,6 @@ function statusClass(s) {
 
 function boothOf(id) {
   return booths.value.find((b) => b.id === id)
-}
-
-function boothCode(id) {
-  const b = boothOf(id)
-  return b ? b.code : id
 }
 
 function boothArea(id) {

@@ -98,6 +98,7 @@
             <span class="dot">·</span>
             <span>{{ b.kind }}</span>
           </div>
+          <div v-if="prevCode(b.id)" class="bprev">原号 {{ prevCode(b.id) }}，旧函仍有效</div>
           <div class="barea">{{ b.area }} <small>㎡</small></div>
 
           <div class="bedit">
@@ -116,6 +117,7 @@
               <el-option label="空闲" value="空闲" />
               <el-option label="维修" value="维修" />
             </el-select>
+            <el-button link type="primary" size="small" class="rename-link" @click="openRename(b)">改号</el-button>
           </div>
         </div>
         <div v-if="!rows.length" class="no-result">没有符合条件的展位，把条件放宽点试试</div>
@@ -154,6 +156,23 @@
         <el-button type="primary" @click="create">摆上</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="renameDlg" :title="`改展位编号（当前 ${renameForm.oldCode}）`" width="480px">
+      <el-form label-width="88px">
+        <el-form-item label="新编号">
+          <el-input v-model="renameForm.code" placeholder="如 C-101" />
+        </el-form-item>
+      </el-form>
+      <div class="rename-hint">
+        改号会连带走件：未结束的排期确认函、待审 / 已批准的封道条一并换印新号，
+        旧号从票面上消失；已结束、已驳回、作废的旧函仍印旧号继续有效。
+        旧号就此退役，不能再注册新展位，同一块面积不会被两套号各算一次。
+      </div>
+      <template #footer>
+        <el-button @click="renameDlg = false">取消</el-button>
+        <el-button type="primary" :loading="renaming" @click="doRename">改号</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -164,9 +183,13 @@ import { boothApi, hallApi } from '../api'
 
 const halls = ref([])
 const all = ref([])
+const history = ref([])
 const collapsed = ref(false)
 const dlg = ref(false)
 const newBooth = ref({})
+const renameDlg = ref(false)
+const renaming = ref(false)
+const renameForm = ref({})
 const forms = reactive({})
 
 const filters = ref({ keyword: '', hallId: null, status: '', kind: '', minArea: 0 })
@@ -196,6 +219,35 @@ function hallName(id) {
 
 function usedArea(hallId) {
   return all.value.filter((b) => b.hallId === hallId).reduce((s, b) => s + b.area, 0)
+}
+
+/** 这个展位最近退役的旧号；登记簿按 id 倒序，第一条就是最近一次改号 */
+function prevCode(boothId) {
+  const hit = history.value.find((h) => h.boothId === boothId && h.status === '已改号')
+  return hit ? hit.code : ''
+}
+
+function openRename(b) {
+  renameForm.value = { id: b.id, oldCode: b.code, code: '' }
+  renameDlg.value = true
+}
+
+async function doRename() {
+  const code = (renameForm.value.code || '').trim()
+  if (!code) return ElMessage.error('要填新编号')
+  renaming.value = true
+  try {
+    const r = await boothApi.rename(renameForm.value.id, code)
+    ElMessage.success(
+      `${r.oldCode} 已改为 ${r.newCode}：${r.bookingsUpdated} 张排期确认函、${r.closuresUpdated} 张封道条一并换印新号`
+    )
+    renameDlg.value = false
+    await load()
+  } catch (e) {
+    ElMessage.error(e.message)
+  } finally {
+    renaming.value = false
+  }
 }
 
 function setHall(id) {
@@ -242,6 +294,7 @@ async function load() {
   try {
     halls.value = await hallApi.list({})
     all.value = await boothApi.list({})
+    history.value = await boothApi.codeHistory()
     all.value.forEach((b) => {
       forms[b.id] = { kind: b.kind, status: b.status === '已租' ? '空闲' : b.status }
     })
@@ -400,6 +453,20 @@ onMounted(load)
   font-size: 12px;
   color: #8b93a7;
   margin: 5px 0 2px;
+}
+.bprev {
+  font-size: 11px;
+  color: #b88230;
+  margin: 0 0 2px;
+}
+.rename-link {
+  margin-left: auto;
+}
+.rename-hint {
+  font-size: 12px;
+  color: #8b93a7;
+  line-height: 1.6;
+  padding: 0 2px;
 }
 .dot {
   margin: 0 5px;

@@ -46,7 +46,9 @@ export const hallApi = {
 export const boothApi = {
   list: (params) => http.get('/booths', { params }),
   create: (data) => http.post('/booths', data),
-  update: (id, data) => http.put(`/booths/${id}`, data)
+  update: (id, data) => http.put(`/booths/${id}`, data),
+  rename: (id, code) => http.post(`/booths/${id}/rename`, { code }),
+  codeHistory: () => http.get('/booths/code-history')
 }
 
 export const bookingApi = {

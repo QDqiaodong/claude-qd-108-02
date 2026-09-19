@@ -84,6 +84,8 @@ public class BookingService {
         Booking saved = new Booking();
         saved.code = input.code.trim();
         saved.boothId = booth.id;
+        // 确认函上印的展位号随单快照：以后展位改号，只连带换未结束的函，已结束的留旧号
+        saved.boothCode = booth.code;
         saved.expoName = input.expoName.trim();
         saved.tenant = input.tenant.trim();
         saved.startDate = input.startDate;

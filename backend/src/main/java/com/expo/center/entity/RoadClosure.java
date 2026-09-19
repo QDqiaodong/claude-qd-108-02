@@ -25,6 +25,10 @@ public class RoadClosure {
     @Column(name = "booking_id", nullable = false)
     public Long bookingId;
 
+    /** 随单快照：封道条上印的展位号，门卫按这个对票；改号时未闭环的条一起换新号 */
+    @Column(name = "booth_code", nullable = false, length = 32)
+    public String boothCode;
+
     /** 随单快照：哪间展馆，避免排期展位变动后对不上馆 */
     @Column(name = "hall_id", nullable = false)
     public Long hallId;

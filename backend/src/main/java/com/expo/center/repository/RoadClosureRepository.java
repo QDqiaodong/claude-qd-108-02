@@ -16,6 +16,10 @@ public interface RoadClosureRepository extends JpaRepository<RoadClosure, Long> 
     /** 这条排期底下还挂着的有效封道单（待审 / 已批准），排期改状态时要一起作废。 */
     List<RoadClosure> findByBookingIdAndStatusIn(Long bookingId, List<String> statuses);
 
+    /** 这些排期底下还没闭环的封道单（待审 / 已批准），展位改号时要一起换印新号。 */
+    List<RoadClosure> findByBookingIdInAndStatusIn(java.util.Collection<Long> bookingIds,
+                                                   List<String> statuses);
+
     /** 审批时锁当前单。 */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select c from RoadClosure c where c.id = :id")

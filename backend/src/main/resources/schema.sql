@@ -8,6 +8,7 @@ DROP TABLE IF EXISTS closure_seq;
 DROP TABLE IF EXISTS equip_loan;
 DROP TABLE IF EXISTS equipment;
 DROP TABLE IF EXISTS booking;
+DROP TABLE IF EXISTS booth_code_registry;
 DROP TABLE IF EXISTS booth;
 DROP TABLE IF EXISTS hall;
 
@@ -33,10 +34,23 @@ CREATE TABLE booth (
   KEY idx_booth_hall (hall_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE booth_code_registry (
+  id BIGINT NOT NULL AUTO_INCREMENT,
+  code VARCHAR(32) NOT NULL,
+  booth_id BIGINT NOT NULL,
+  status VARCHAR(16) NOT NULL,
+  replaced_by VARCHAR(32) NULL,
+  changed_at DATETIME NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_booth_code_registry_code (code),
+  KEY idx_booth_code_registry_booth (booth_id, status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE booking (
   id BIGINT NOT NULL AUTO_INCREMENT,
   code VARCHAR(32) NOT NULL,
   booth_id BIGINT NOT NULL,
+  booth_code VARCHAR(32) NOT NULL,
   expo_name VARCHAR(128) NOT NULL,
   tenant VARCHAR(64) NOT NULL,
   start_date DATE NOT NULL,
@@ -116,6 +130,7 @@ CREATE TABLE road_closure (
   id BIGINT NOT NULL AUTO_INCREMENT,
   code VARCHAR(32) NOT NULL,
   booking_id BIGINT NOT NULL,
+  booth_code VARCHAR(32) NOT NULL,
   hall_id BIGINT NOT NULL,
   expo_name VARCHAR(128) NOT NULL,
   tenant VARCHAR(64) NOT NULL,
@@ -147,11 +162,19 @@ INSERT INTO booth (code, hall_id, area, kind, status) VALUES
 ('B-201', 2, 150, '标准', '已租'),
 ('B-202', 2, 250, '标准', '已租');
 
-INSERT INTO booking (code, booth_id, expo_name, tenant, start_date, end_date, status) VALUES
-('BK-0901', 1, '秋季家居展', '红星家居', '2026-09-10', '2026-09-20', '展出中'),
-('BK-0902', 4, '珠宝首饰展', '宝盛珠宝', '2026-09-15', '2026-09-25', '待布展'),
-('BK-0904', 5, '金秋婚博会', '良缘会展', '2026-09-19', '2026-09-22', '待布展'),
-('BK-0903', 2, '茶文化博览会', '茗香茶业', '2026-09-01', '2026-09-05', '已结束');
+-- 现有展位的编号都登记在册（在用），以后改号旧号退役也进这本册
+INSERT INTO booth_code_registry (code, booth_id, status, replaced_by, changed_at) VALUES
+('A-101', 1, '在用', NULL, NULL),
+('A-102', 2, '在用', NULL, NULL),
+('A-103', 3, '在用', NULL, NULL),
+('B-201', 4, '在用', NULL, NULL),
+('B-202', 5, '在用', NULL, NULL);
+
+INSERT INTO booking (code, booth_id, booth_code, expo_name, tenant, start_date, end_date, status) VALUES
+('BK-0901', 1, 'A-101', '秋季家居展', '红星家居', '2026-09-10', '2026-09-20', '展出中'),
+('BK-0902', 4, 'B-201', '珠宝首饰展', '宝盛珠宝', '2026-09-15', '2026-09-25', '待布展'),
+('BK-0904', 5, 'B-202', '金秋婚博会', '良缘会展', '2026-09-19', '2026-09-22', '待布展'),
+('BK-0903', 2, 'A-102', '茶文化博览会', '茗香茶业', '2026-09-01', '2026-09-05', '已结束');
 
 INSERT INTO equipment (code, name, kind, total, available) VALUES
 ('EQ-001', '铝合金桁架', '桁架', 200, 150),
@@ -184,10 +207,10 @@ INSERT INTO calib_occ (batch_id, loan_id, equipment_id, booking_id, hall_id, exp
 (1, 7, 4, 4, 1, '茶文化博览会', 10, '待归还厂');
 
 INSERT INTO road_closure
-  (code, booking_id, hall_id, expo_name, tenant, close_date, channel, segment,
+  (code, booking_id, booth_code, hall_id, expo_name, tenant, close_date, channel, segment,
    start_time, end_time, status, reason, submitted_at, reviewed_at)
 VALUES
-  ('RD-0001', 2, 2, '珠宝首饰展', '宝盛珠宝', '2026-09-19', '北卸货通道', '东段（3号门段）',
+  ('RD-0001', 2, 'B-201', 2, '珠宝首饰展', '宝盛珠宝', '2026-09-19', '北卸货通道', '东段（3号门段）',
    '08:00:00', '11:00:00', '已批准', NULL, '2026-09-15 09:12:00', '2026-09-15 10:05:00'),
-  ('RD-0002', 3, 2, '金秋婚博会', '良缘会展', '2026-09-19', '北卸货通道', '西段（1号门段）',
+  ('RD-0002', 3, 'B-202', 2, '金秋婚博会', '良缘会展', '2026-09-19', '北卸货通道', '西段（1号门段）',
    '13:30:00', '16:30:00', '待审', NULL, '2026-09-16 14:40:00', NULL);

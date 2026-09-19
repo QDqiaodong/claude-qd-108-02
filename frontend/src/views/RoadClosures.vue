@@ -40,7 +40,7 @@
       </el-select>
       <el-input
         v-model="filters.keyword"
-        placeholder="单号 / 展会 / 承租方 / 通道"
+        placeholder="单号 / 展会 / 承租方 / 通道 / 展位号"
         clearable
         size="small"
         style="width: 220px"
@@ -67,6 +67,9 @@
       </el-table-column>
       <el-table-column label="展馆" width="100">
         <template #default="{ row }">{{ hallName(row.hallId) }}</template>
+      </el-table-column>
+      <el-table-column label="展位号" width="90">
+        <template #default="{ row }"><span class="mono">{{ row.boothCode }}</span></template>
       </el-table-column>
       <el-table-column label="封道日期" width="112" prop="closeDate" />
       <el-table-column label="卸货通道·段" min-width="180">
@@ -110,7 +113,7 @@
             <el-option
               v-for="b in myPendingBookings"
               :key="b.id"
-              :label="`${b.code} ${b.expoName}（${b.startDate}~${b.endDate}）`"
+              :label="`${b.boothCode} ${b.code} ${b.expoName}（${b.startDate}~${b.endDate}）`"
               :value="b.id"
             />
           </el-select>
@@ -227,7 +230,7 @@ const rows = computed(() =>
     if (f.hallId && c.hallId !== f.hallId) return false
     if (f.keyword) {
       const k = f.keyword
-      if (![c.code, c.expoName, c.tenant, c.channel].some((x) => x && x.includes(k))) return false
+      if (![c.code, c.expoName, c.tenant, c.channel, c.boothCode].some((x) => x && x.includes(k))) return false
     }
     return true
   })
