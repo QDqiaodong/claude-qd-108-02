@@ -163,8 +163,9 @@ public class BoothService {
                 throw new BizException("展馆 " + hall.name + " 现在是「" + hall.status
                         + "」，摆不了展位");
             }
+            final Long selfId = b.id;
             int used = booths.findByHallId(hall.id).stream()
-                    .filter(x -> !x.id.equals(b.id))
+                    .filter(x -> !x.id.equals(selfId))
                     .mapToInt(x -> x.area).sum();
             if (used + area > hall.area) {
                 throw new BizException("展馆 " + hall.name + " 只剩 " + (hall.area - used)
